@@ -28,7 +28,6 @@ class GNSDKMatch(object):
         assert(c.gnsdk_dsp_initialize(manager_handle) == 0)
         assert(c.gnsdk_musicidstream_initialize(manager_handle) == 0)
 
-        # TODO: check if user registered and register if not
         ans = conn.execute("select str_val from settings where setting='userid'").fetchall()
         userid = b''
         for userid_ in ans:
@@ -120,6 +119,7 @@ def _ident_callback(data, status, pb_abort):
 
 class MatchResult(object):
     """docstring for MatchResult"""
+
     def __init__(self):
         super(MatchResult, self).__init__()
         self.year = None
