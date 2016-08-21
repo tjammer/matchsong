@@ -1,0 +1,6 @@
+*.pyc
+*.db
+*.txt
+lib_pulseaudio.*
+__pycache__
+.ipynb_checkpoints
