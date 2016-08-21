@@ -35,6 +35,7 @@ GNSDK_GDO_CHILD_TITLE_OFFICIAL = "gnsdk_ctx_title!off".encode('ASCII')
 GNSDK_GDO_CHILD_NAME_OFFICIAL = "gnsdk_xtc_name!off".encode('ASCII')
 GNSDK_GDO_VALUE_DISPLAY = "gnsdk_val_display".encode('ASCII')
 GNSDK_GDO_CHILD_TRACK_MATCHED = "gnsdk_ctx_track!matching".encode('ASCII')
+GNSDK_USER_REGISTER_MODE_ONLINE = "gnsdk_userregmode_online".encode('ASCII')
 
 
 class gnsdk_error_info_t(Structure):
@@ -93,6 +94,10 @@ gnsdk_manager_user_create.argtypes = [gnsdk_cstr_t, gnsdk_cstr_t, POINTER(gnsdk_
 gnsdk_manager_user_release = lib_man.gnsdk_manager_user_release
 gnsdk_manager_user_release.restype = gnsdk_error_t
 gnsdk_manager_user_release.argtypes = [gnsdk_user_handle_t]
+
+gnsdk_manager_user_register = lib_man.gnsdk_manager_user_register
+gnsdk_manager_user_register.restype = gnsdk_error_t
+gnsdk_manager_user_register.argtypes = [gnsdk_cstr_t, gnsdk_cstr_t, gnsdk_cstr_t, gnsdk_cstr_t, POINTER(gnsdk_cstr_t)]
 
 gnsdk_manager_shutdown = lib_man.gnsdk_manager_shutdown
 gnsdk_manager_shutdown.restype = gnsdk_error_t

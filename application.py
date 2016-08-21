@@ -15,7 +15,11 @@ class MyApp(Gtk.Application):
         self.window = None
         self.m = MusicStream()
 
-        self.match = GNSDKMatch()
+        self.match = None
+        try:
+            self.match = GNSDKMatch()
+        except AssertionError:
+            pass
 
     def do_activate(self):
         # We only allow a single window and raise any existing ones
@@ -53,6 +57,14 @@ class MyApp(Gtk.Application):
 
     def process_match(self, matches):
         self.window.process_match(matches)
+
+    def reinit_gnsdkmatch(self):
+        try:
+            self.match = GNSDKMatch()
+            self.window.custom_title.set_text('press record to start matching')
+            self.window.match_button.set_sensitive(True)
+        except AssertionError:
+            pass
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, Gio, Gdk
 import threading
 import sqlite3
 import datetime
@@ -11,18 +11,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
+        app = Gio.Application.get_default()
         self.set_default_size(700, 400)
         self.set_icon_name('media-record')
 
         self.hb = Gtk.HeaderBar()
         self.hb.set_show_close_button(True)
-
-        self.custom_title = Gtk.Label()
-        self.custom_title.set_text('press record to start matching')
-
         self.hb.props.title = "matchsong"
-        self.hb.props.custom_title = self.custom_title
-        self.set_titlebar(self.hb)
 
         self.settings_button = Gtk.MenuButton()
         image = Gtk.Image.new_from_icon_name('open-menu-symbolic',
@@ -34,9 +29,17 @@ class MainWindow(Gtk.ApplicationWindow):
         image = Gtk.Image.new_from_icon_name('media-record',
                                              Gtk.IconSize.BUTTON)
         self.match_button.add(image)
-        app = Gio.Application.get_default()
         self.match_button.connect('clicked', self.start_match)
         self.hb.pack_start(self.match_button)
+
+        self.custom_title = Gtk.Label()
+        if app.match:
+            self.custom_title.set_text('press record to start matching')
+        else:
+            self.custom_title.set_text('please set up GNSDK data in preferences')
+            self.match_button.set_sensitive(False)
+        self.hb.props.custom_title = self.custom_title
+        self.set_titlebar(self.hb)
 
         self.add_db()
         self.show_all()
@@ -48,7 +51,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.check_db_history()
         conn = sqlite3.connect('hiset.db')
         c = conn.cursor()
-        data = c.execute("select * from (select * from matches order by rowid DESC limit 10)").fetchall()
+        data = c.execute("select * from (select * from matches order by rowid DESC limit 15)").fetchall()
         conn.close()
 
         self.table = Gtk.ListStore(str, str, str, str, str)

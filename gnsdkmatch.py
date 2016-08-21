@@ -3,38 +3,18 @@ import gnsdkwrap._gnsdk as c
 from ctypes import *
 from xml.etree import ElementTree as ET
 import sqlite3
+import os
 
 
 class GNSDKMatch(object):
     """docstring for GNSDKMatch"""
+
     def __init__(self):
         super(GNSDKMatch, self).__init__()
         self.matching = False
 
         # init gnsdk stream matching
-        lpath = 'license.txt'.encode('ASCII')
-        manager_handle = c.gnsdk_manager_handle_t()
-        c.gnsdk_manager_initialize(byref(manager_handle),
-                                   lpath, c.GNSDK_MANAGER_LICENSEDATA_FILENAME)
-        c.gnsdk_dsp_initialize(manager_handle)
-        c.gnsdk_musicidstream_initialize(manager_handle)
-
-        # TODO: check if user registered and register if not
         conn = sqlite3.connect('hiset.db')
-        ans = conn.execute("select str_val from settings where setting='userid'").fetchall()
-        userid = b''
-        for userid_ in ans:
-            for user in userid_:
-                if user and isinstance(user, str):
-                    userid = user.strip().encode('ASCII')
-
-        ans = conn.execute("select str_val from settings where setting='usertag'").fetchall()
-        usertag = b''
-        for usertag_ in ans:
-            for user in usertag_:
-                if user:
-                    usertag = user.strip().encode('ASCII')
-
         ans = conn.execute("select str_val from settings where setting='license_path'").fetchall()
         lpath = b''
         for lpath_ in ans:
@@ -42,12 +22,28 @@ class GNSDKMatch(object):
                 if user:
                     lpath = user.strip().encode('ASCII')
 
-        with open('user.txt') as f:
-            userbuf = f.read().strip().encode('ASCII')
+        manager_handle = c.gnsdk_manager_handle_t()
+        assert(c.gnsdk_manager_initialize(byref(manager_handle),
+                                lpath, c.GNSDK_MANAGER_LICENSEDATA_FILENAME) == 0)
+        assert(c.gnsdk_dsp_initialize(manager_handle) == 0)
+        assert(c.gnsdk_musicidstream_initialize(manager_handle) == 0)
+
+        # TODO: check if user registered and register if not
+        ans = conn.execute("select str_val from settings where setting='userid'").fetchall()
+        userid = b''
+        for userid_ in ans:
+            for user in userid_:
+                if user:
+                    userid = user.strip().encode('ASCII')
+
+        if os.path.isfile('user.txt'):
+            with open('user.txt') as f:
+                userbuf = f.read().strip().encode('ASCII')
+        else:
+            userbuf = self.register_user()
 
         self.user_handle = c.gnsdk_user_handle_t()
-        print(c.gnsdk_manager_user_create(userbuf, userid, byref(self.user_handle)))
-        result_callback = c.gnsdk_result_available_fn_t(self._result_callback)
+        assert(c.gnsdk_manager_user_create(userbuf, userid, byref(self.user_handle)) == 0)
 
     def _result_callback(self, data, channel_handle, response, pb_abort):
         count = c.gnsdk_uint32_t(0)
@@ -91,6 +87,32 @@ class GNSDKMatch(object):
         # 20 secs
         c.gnsdk_musicidstream_channel_wait_for_identify(channel_handle, 20000)
 
+    def register_user(self):
+        buf = c.gnsdk_cstr_t()
+
+        conn = sqlite3.connect('hiset.db')
+        ans = conn.execute("select str_val from settings where setting='userid'").fetchall()
+        userid = b''
+        for userid_ in ans:
+            for user in userid_:
+                if user:
+                    userid = user.strip().encode('ASCII')
+
+        ans = conn.execute("select str_val from settings where setting='usertag'").fetchall()
+        usertag = b''
+        for usertag_ in ans:
+            for user in usertag_:
+                if user:
+                    usertag = user.strip().encode('ASCII')
+
+        assert(c.gnsdk_manager_user_register(c.GNSDK_USER_REGISTER_MODE_ONLINE,
+                                             userid, usertag,
+                                             '1.0.0.0'.encode('ASCII'),
+                                             byref(buf)) == 0)
+
+        with open('user.txt', 'wb') as f:
+            f.write(buf.value)
+        return buf.value
 
 def _ident_callback(data, status, pb_abort):
     pass

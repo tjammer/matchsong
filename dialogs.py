@@ -13,7 +13,6 @@ class SettingsDialog(object):
         app = Gio.Application.get_default()
 
         self.__dialog = builder.get_object('SettingsDialog')
-        print(self.__dialog)
         self.__dialog.set_transient_for(app.window)
 
         combo = builder.get_object('combo')
@@ -71,66 +70,8 @@ class SettingsDialog(object):
         conn.execute("update settings set str_val=? where setting='license_path'", (self.license_path.get_filename(),))
         conn.commit()
         conn.close()
+
+        app = Gio.Application.get_default()
+        if not app.match:
+            app.reinit_gnsdkmatch()
         self.__dialog.close()
-
-
-class SettingsDialog2(Gtk.Window):
-    """docstring for SettingsDialog"""
-    def __init__(self, *args, **kwargs):
-        super(SettingsDialog, self).__init__(*args, **kwargs)
-        self.set_title('Preferences')
-
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(True)
-        hb.set_visible(True)
-        hb.set_can_focus(False)
-        hb.set_title('Preferences')
-        self.set_titlebar(hb)
-
-        grid = Gtk.Grid()
-        self.add(grid)
-
-        grid.set_halign(Gtk.Align.START)
-        grid.set_margin_start(10)
-        grid.set_margin_end(10)
-        grid.set_margin_top(10)
-        grid.set_margin_bottom(10)
-        grid.set_column_spacing(10)
-
-        app = Gio.Application.get_default()
-        # pulseaudio settings
-        combo = Gtk.ComboBoxText()
-        combo.set_halign(Gtk.Align.END)
-        for index, (name, desc, mon) in app.m.sinks.items():
-            combo.append_text(desc)
-        if app.m._sink_index:
-            combo.set_active(app.m._sink_index)
-        else:
-            combo.set_active(0)
-        combo.connect('changed', self.update_monitor)
-
-        label = Gtk.Label('Device to monitor')
-        label.set_halign(Gtk.Align.START)
-        grid.add(label)
-        grid.add(combo)
-
-        # gnsdk user settings
-        label = Gtk.Label('GNSDK user id')
-        label.set_halign(Gtk.Align.START)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-
-
-
-
-        self.set_modal(True)
-        self.show_all()
-
-    def update_monitor(self, combo):
-        # insert new index into settings db
-        ac = combo.get_active()
-        conn = sqlite3.connect('hiset.db')
-        conn.execute("update settings set val={} where setting='last_index'".format(ac))
-        conn.commit()
-        conn.close()
-        app = Gio.Application.get_default()
-        app.m.choose_stream()
